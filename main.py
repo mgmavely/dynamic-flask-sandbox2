@@ -1,7 +1,8 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import random
 from datetime import datetime
 import requests
+import smtplib
 
 app = Flask(__name__)
 
@@ -18,16 +19,33 @@ def about():
     return render_template('about.html')
 
 
-@app.route('/contact')
+@app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    return render_template('contact.html')
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        phone = request.form['phone']
+        message = request.form['message']
+        my_email = ""
+        password = ""
+        mesg = f"Subject:New Message\n\nName: {name}\nEmail: {email}\nPhone: {phone}\nMessage:{message}"
+        print(mesg)
+        with smtplib.SMTP("smtp.gmail.com") as connection:
+            connection.starttls()
+            connection.login(user=my_email, password=password)
+            connection.sendmail(from_addr=my_email, to_addrs=my_email,
+                                msg=mesg)
+
+        return "<h1>Sucessfully sent your message</h1>"
+    else:
+        return render_template('contact.html')
 
 
-@app.route('/post.html/<int:id>')
+@app.route('/post/<int:id>')
 def get_post(id):
     response = requests.get('https://api.npoint.io/bc0ec46ce1575b88c05d')
     blog_data = response.json()[id]
-    return render_template('post.html', title=blog_data['title'], subtitle=blog_data['subtitle'],
+    return render_template('posts.html', title=blog_data['title'], subtitle=blog_data['subtitle'],
                            author=blog_data['author'], date=blog_data['date'])
 
 
